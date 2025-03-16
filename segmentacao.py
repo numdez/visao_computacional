@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
+from pathlib import Path
 import os
 
 # Função para calcular o NDVI
@@ -21,25 +22,22 @@ def calculate_ndvi(image):
     return ndvi_normalized
 
 # Caminho da pasta com as imagens
-folder_path = os.path.join('C:\\', 'Users', 'Eduardo Carvalho', 'Downloads', 'VC_desmatamento.python', 'area_desmatada')
+curPath = Path(__file__).parent
 
-# Verificar se a pasta existe
-if not os.path.exists(folder_path):
-    print(f"Erro: A pasta '{folder_path}' não foi encontrada.")
-    exit()
+imgsPath = f'{curPath}/imgs' 
 
 # Listar todas as imagens na pasta
-image_files = [f for f in os.listdir(folder_path) if f.endswith(('.jpg', '.jpeg', '.png'))]
+image_files = [f for f in os.listdir(imgsPath) if f.endswith(('.jpg', '.jpeg', '.png'))]
 
 # Verificar se há imagens na pasta
 if not image_files:
-    print(f"Erro: Nenhuma imagem encontrada na pasta '{folder_path}'.")
+    print(f"Erro: Nenhuma imagem encontrada na pasta '{imgsPath}'.")
     exit()
 
 # Processar cada imagem
 for image_file in image_files:
     # Caminho completo da imagem
-    image_path = os.path.join(folder_path, image_file)
+    image_path = os.path.join(imgsPath, image_file)
     
     # Carregar a imagem
     image = cv2.imread(image_path)
