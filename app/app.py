@@ -42,7 +42,6 @@ def apply_threshold_and_dilate(vari):
 
 def apply_mask_to_original(image, mask):
     try:
-        # Cria imagem com áreas removidas destacadas em vermelho
         negative_mask = cv2.bitwise_not(mask)
         highlighted = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         highlighted[negative_mask == 255] = [255, 0, 0]  # Destaca em vermelho
