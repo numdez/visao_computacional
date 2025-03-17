@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Processamento de Imagens</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #18bc9c;
+            --highlight-color: #dc3545;
+        }
+        
+        body {
+            background-color: #f8f9fa;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .upload-container {
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px dashed var(--secondary-color);
+            border-radius: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .upload-container.dragover {
+            background: rgba(24, 188, 156, 0.2);
+            border-color: #13987d;
+        }
+
+        .main-image-card {
+            border-radius: 20px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+            overflow: hidden;
+            margin-bottom: 2rem;
+        }
+
+        .secondary-image-card {
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease;
+            overflow: hidden;
+        }
+
+        .main-image-card img {
+            object-fit: contain;
+            height: 600px;
+            width: 100%;
+            padding: 20px;
+            background: #fff;
+        }
+
+        .secondary-image-card img {
+            object-fit: contain;
+            height: 300px;
+            width: 100%;
+            padding: 15px;
+            background: #fff;
+        }
+
+        .custom-btn {
+            background-color: var(--secondary-color);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: none;
+        }
+
+        .custom-btn:hover {
+            background-color: #13987d;
+            transform: translateY(-2px);
+        }
+
+        .processing-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            display: none;
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .section-title {
+            color: var(--primary-color);
+            border-bottom: 3px solid var(--secondary-color);
+            padding-bottom: 0.5rem;
+            margin: 2rem 0;
+        }
+
+        .highlight-header {
+            background: linear-gradient(45deg, var(--secondary-color), var(--primary-color));
+            color: white;
+            padding: 1rem;
+            text-align: center;
+        }
+    </style>
+</head>
+<body class="d-flex flex-column">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary py-3">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="#">
+                <i class="bi bi-magic me-2"></i>
+                D'Agua Vision
+            </a>
+        </div>
+    </nav>
+
+    <main class="container my-5 flex-grow-1">
+        <div class="processing-overlay">
+            <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+                <span class="visually-hidden">Processando...</span>
+            </div>
+        </div>
+
+        <h1 class="text-center mb-5 fw-bold text-primary">Processamento de Imagens</h1>
+
+        {% if error %}
+        <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+            {{ error }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endif %}
+
+        <div class="row justify-content-center mb-5">
+            <div class="col-md-10">
+                <form action="/" method="post" enctype="multipart/form-data" class="text-center" id="uploadForm">
+                    <div class="upload-container p-5 mb-4" id="dropZone">
+                        <i class="bi bi-cloud-arrow-up fs-1 text-secondary mb-2"></i>
+                        <h4 class="my-3">Arraste sua imagem ou clique para selecionar</h4>
+                        <div class="upload-error mb-2" id="errorMessage"></div>
+                        <input type="file" name="image" accept="image/*" class="form-control" required 
+                               hidden id="fileInput">
+                        <label for="fileInput" class="custom-btn">
+                            <i class="bi bi-file-image me-2"></i>Selecionar Arquivo
+                        </label>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        {% if original_image %}
+        <div class="row">
+            <!-- Imagens Principais -->
+            <div class="col-12">
+                <h2 class="section-title text-center">Resultados Principais</h2>
+            </div>
+            
+            <div class="col-lg-6 mb-5">
+                <div class="main-image-card">
+                    <div class="highlight-header">
+                        <h4>Imagem Original</h4>
+                    </div>
+                    <img src="data:image/png;base64,{{ original_image }}" alt="Imagem Original">
+                </div>
+            </div>
+
+            <div class="col-lg-6 mb-5">
+                <div class="main-image-card">
+                    <div class="highlight-header bg-success">
+                        <h4>Resultado Final</h4>
+                    </div>
+                    <img src="data:image/png;base64,{{ final_image_with_mask }}" alt="Resultado Final">
+                </div>
+            </div>
+
+            <!-- Etapas do Processamento -->
+            <div class="col-12">
+                <h2 class="section-title text-center">Detalhes do Processamento</h2>
+                <div class="row g-4">
+                    <div class="col-md-6 col-lg-3">
+                        <div class="secondary-image-card">
+                            <img src="data:image/png;base64,{{ image_no_green }}" alt="Sem Verde">
+                            <div class="p-3 text-center">
+                                <h5>Áreas Verdes</h5>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-3">
+                        <div class="secondary-image-card">
+                            <img src="data:image/png;base64,{{ ndvi_image }}" alt="Índice VARI">
+                            <div class="p-3 text-center">
+                                <h5>Análise espectral (VARI)</h5>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-3">
+                        <div class="secondary-image-card">
+                            <img src="data:image/png;base64,{{ threshold_image }}" alt="Threshold">
+                            <div class="p-3 text-center">
+                                <h5>Limiarização aplicada</h5>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-3">
+                        <div class="secondary-image-card">
+                            <img src="data:image/png;base64,{{ negative_mask_image }}" alt="Áreas Removidas">
+                            <div class="p-3 text-center">
+                                <h5>Áreas "Importantes"</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </main>
+
+    <footer class="bg-dark text-white py-4 mt-auto">
+        <div class="container text-center">
+            <p class="mb-0">
+                © 2023 GreenRemover PRO - 
+                <a href="#" class="text-white text-decoration-none">Termos de Uso</a> | 
+                <a href="#" class="text-white text-decoration-none">Política de Privacidade</a>
+            </p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const form = document.getElementById('uploadForm');
+        const processingOverlay = document.querySelector('.processing-overlay');
+
+        // Drag and Drop
+        const preventDefaults = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+        };
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(event => {
+            dropZone.addEventListener(event, preventDefaults);
+        });
+
+        ['dragenter', 'dragover'].forEach(event => {
+            dropZone.addEventListener(event, () => dropZone.classList.add('dragover'));
+        });
+
+        ['dragleave', 'drop'].forEach(event => {
+            dropZone.addEventListener(event, () => dropZone.classList.remove('dragover'));
+        });
+
+        dropZone.addEventListener('drop', handleDrop);
+
+        function handleDrop(e) {
+            const files = e.dataTransfer.files;
+            if (files.length > 0) handleFiles(files);
+        }
+
+        fileInput.addEventListener('change', () => handleFiles(fileInput.files));
+
+        function handleFiles(files) {
+            if (!files || files.length === 0) return;
+            
+            const file = files[0];
+            if (!file.type.startsWith('image/')) {
+                showError('Apenas arquivos de imagem são permitidos!');
+                return;
+            }
+
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(file);
+            fileInput.files = dataTransfer.files;
+
+            document.querySelector('label[for="fileInput"]').innerHTML = `
+                <i class="bi bi-check-circle me-2"></i>${file.name}
+            `;
+
+            processingOverlay.style.display = 'flex';
+            form.submit();
+        }
+
+        function showError(message) {
+            const errorElement = document.getElementById('errorMessage');
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+            setTimeout(() => errorElement.style.display = 'none', 5000);
+        }
+
+        window.onload = () => processingOverlay.style.display = 'none';
+    </script>
+</body>
+</html>
